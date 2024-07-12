@@ -29,13 +29,41 @@ def run(args: DictConfig):
     
     #train_set = ThingsMEGDataset("train", args.data_dir)
     train_set = ThingsMEGDataset("train", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
-    train_loader = torch.utils.data.DataLoader(train_set, shuffle=True, **loader_args)
+    
     val_set = ThingsMEGDataset("val", args.data_dir)
-    val_loader = torch.utils.data.DataLoader(val_set, shuffle=False, **loader_args)
+    
     test_set = ThingsMEGDataset("test", args.data_dir)
-    test_loader = torch.utils.data.DataLoader(
-        test_set, shuffle=False, batch_size=args.batch_size, num_workers=args.num_workers
+    
+    def collate_fn(batch):
+        X_batch = torch.stack([item[0].float() for item in batch])
+        y_batch = torch.tensor([item[1].long() for item in batch]) if batch[0][1] is not None else None
+        subject_idxs_batch = torch.tensor([item[2] for item in batch])
+        return X_batch, y_batch, subject_idxs_batch
+
+    train_loader = torch.utils.data.DataLoader(
+        train_set, 
+        batch_size=args.batch_size, 
+        shuffle=True,
+        num_workers=args.num_workers,
+        collate_fn=collate_fn
     )
+
+    val_loader = torch.utils.data.DataLoader(
+        val_set, 
+        batch_size=args.batch_size, 
+        shuffle=False, 
+        num_workers=args.num_workers,
+        collate_fn=collate_fn
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_set, 
+        batch_size=args.batch_size, 
+        shuffle=False, 
+        num_workers=args.num_workers,
+        collate_fn=collate_fn
+    )
+
 
     # ------------------
     #       Model

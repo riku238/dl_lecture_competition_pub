@@ -29,12 +29,7 @@ class BasicConvClassifier(nn.Module):
         self.weight_decay = weight_decay  # L2正則化の重み
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        """_summary_
-        Args:
-            X (b, c, t): _description_
-        Returns:
-            X (b, num_classes): _description_
-        """
+        X = X.float()  # 入力を float32 にキャスト
         X = self.blocks(X)
         return self.head(X)
 
@@ -67,6 +62,7 @@ class ConvBlock(nn.Module):
         self.dropout = nn.Dropout(p_drop)
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
+        X = X.float()  # 入力を float32 にキャスト
         if self.in_dim == self.out_dim:
             X = self.conv0(X) + X  # skip connection
         else:

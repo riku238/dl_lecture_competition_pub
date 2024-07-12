@@ -27,7 +27,8 @@ def run(args: DictConfig):
     # ------------------
     loader_args = {"batch_size": args.batch_size, "num_workers": args.num_workers}
     
-    train_set = ThingsMEGDataset("train", args.data_dir)
+    #train_set = ThingsMEGDataset("train", args.data_dir)
+    train_set = ThingsMEGDataset("train", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
     train_loader = torch.utils.data.DataLoader(train_set, shuffle=True, **loader_args)
     val_set = ThingsMEGDataset("val", args.data_dir)
     val_loader = torch.utils.data.DataLoader(val_set, shuffle=False, **loader_args)
@@ -40,9 +41,14 @@ def run(args: DictConfig):
     #       Model
     # ------------------
     model = BasicConvClassifier(
-        train_set.num_classes, train_set.seq_len, train_set.num_channels
+        num_classes=train_set.num_classes,
+        seq_len=train_set.seq_len,
+        in_channels=train_set.num_channels,
+        hid_dim=128,
+        p_drop=0.5,
+        weight_decay=1e-4
     ).to(args.device)
-
+    
     # ------------------
     #     Optimizer
     # ------------------
@@ -66,10 +72,10 @@ def run(args: DictConfig):
             X, y = X.to(args.device), y.to(args.device)
 
             y_pred = model(X)
-            
-            loss = F.cross_entropy(y_pred, y)
+
+            loss = F.cross_entropy(y_pred, y) + model.apply_l2_regularization()
             train_loss.append(loss.item())
-            
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()

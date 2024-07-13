@@ -30,9 +30,10 @@ def run(args: DictConfig):
     #train_set = ThingsMEGDataset("train", args.data_dir)
     train_set = ThingsMEGDataset("train", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
     
-    val_set = ThingsMEGDataset("val", args.data_dir)
+    val_set = ThingsMEGDataset("val", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
     
-    test_set = ThingsMEGDataset("test", args.data_dir)
+    test_set = ThingsMEGDataset("test", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
+
     
     def collate_fn(batch):
         X_batch = torch.stack([item[0].float() for item in batch])

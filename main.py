@@ -123,13 +123,15 @@ def run(args: DictConfig):
             val_acc.append(accuracy(y_pred, y).item())
 
         print(f"Epoch {epoch+1}/{args.epochs} | train loss: {np.mean(train_loss):.3f} | train acc: {np.mean(train_acc):.3f} | val loss: {np.mean(val_loss):.3f} | val acc: {np.mean(val_acc):.3f}")
-        torch.save(model.state_dict(), os.path.join(logdir, "model_last.pt"))
+        torch.save(model.cpu().state_dict(), os.path.join(logdir, "model_last.pt"))
+        model.to(args.device)  
         if args.use_wandb:
             wandb.log({"train_loss": np.mean(train_loss), "train_acc": np.mean(train_acc), "val_loss": np.mean(val_loss), "val_acc": np.mean(val_acc)})
         
         if np.mean(val_acc) > max_val_acc:
             cprint("New best.", "cyan")
-            torch.save(model.state_dict(), os.path.join(logdir, "model_best.pt"))
+            torch.save(model.cpu().state_dict(), os.path.join(logdir, "model_best.pt"))
+            model.to(args.device)  
             max_val_acc = np.mean(val_acc)
             
     
@@ -137,6 +139,7 @@ def run(args: DictConfig):
     #  Start evaluation with best model
     # ----------------------------------
     model.load_state_dict(torch.load(os.path.join(logdir, "model_best.pt"), map_location=args.device))
+    model.to(args.device)
 
     preds = [] 
     model.eval()

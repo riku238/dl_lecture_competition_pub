@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import torch
-import torch.nn.functional as F
 import hydra
 from omegaconf import DictConfig
 from termcolor import cprint
@@ -25,31 +24,39 @@ def run(args: DictConfig):
     # ------------------
     #    Dataloader
     # ------------------    
-    test_set = ThingsMEGDataset(
-        split="test",
-        data_dir=args.data_dir,
-        resample_rate=args.resample_rate,
-        filter_params=args.filter_params,
-        scaling=args.scaling,
-        baseline_correction=args.baseline_correction
-    )
+    def collate_fn(batch):
+        X_batch = torch.stack([item[0].float() for item in batch])
+        y_batch = torch.tensor([item[1].long() for item in batch]) if batch[0][1] is not None else None
+        subject_idxs_batch = torch.tensor([item[2] for item in batch])
+        return X_batch, y_batch, subject_idxs_batch
+    
+    test_set = ThingsMEGDataset("test", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
+    
     test_loader = torch.utils.data.DataLoader(
         test_set, 
-        shuffle=False, 
         batch_size=args.batch_size, 
+        shuffle=False, 
         num_workers=args.num_workers,
-        collate_fn=collate_fn_test
+        collate_fn=collate_fn
     )
 
     # ------------------
     #       Model
     # ------------------
     model = BasicConvClassifier(
-        num_classes=test_set.num_classes, 
-        seq_len=test_set.seq_len, 
-        in_channels=test_set.num_channels
+        num_classes=test_set.num_classes,
+        seq_len=test_set.seq_len,
+        in_channels=test_set.num_channels,
+        hid_dim=128,
+        p_drop=0.5,
+        weight_decay=1e-4
     ).to(args.device)
-    model.load_state_dict(torch.load(args.model_path, map_location=args.device))
+    
+  
+    model_path = os.path.join(savedir, "model_best.pt")
+    map_location = torch.device(args.device)
+    state_dict = torch.load(model_path, map_location=map_location)
+    model.load_state_dict(state_dict)
 
     # ------------------
     #  Start evaluation

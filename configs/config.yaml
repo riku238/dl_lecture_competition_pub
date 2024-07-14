@@ -1,8 +1,8 @@
 batch_size: 128
-epochs: 1
+epochs: 10
 lr: 0.001
 
-device: cpu:0
+device: cuda:0
 num_workers: 4
 seed: 1234
 use_wandb: False

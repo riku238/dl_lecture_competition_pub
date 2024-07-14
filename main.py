@@ -40,6 +40,11 @@ def run(args: DictConfig):
         y_batch = torch.tensor([item[1].long() for item in batch]) if batch[0][1] is not None else None
         subject_idxs_batch = torch.tensor([item[2] for item in batch])
         return X_batch, y_batch, subject_idxs_batch
+    
+    def collate_fn_test(batch):
+        X_batch = torch.stack([item[0].float() for item in batch])
+        subject_idxs_batch = torch.tensor([item[1] for item in batch])
+        return X_batch, subject_idxs_batch
 
     train_loader = torch.utils.data.DataLoader(
         train_set, 
@@ -62,7 +67,7 @@ def run(args: DictConfig):
         batch_size=args.batch_size, 
         shuffle=False, 
         num_workers=args.num_workers,
-        collate_fn=collate_fn
+        collate_fn=collate_fn_test
     )
 
 
@@ -130,8 +135,7 @@ def run(args: DictConfig):
         
         if np.mean(val_acc) > max_val_acc:
             cprint("New best.", "cyan")
-            torch.save(model.cpu().state_dict(), os.path.join(logdir, "model_best.pt"))
-            model.to(args.device)  
+            torch.save(model.state_dict(), os.path.join(logdir, "model_best.pt"))
             max_val_acc = np.mean(val_acc)
             
     
@@ -139,7 +143,6 @@ def run(args: DictConfig):
     #  Start evaluation with best model
     # ----------------------------------
     model.load_state_dict(torch.load(os.path.join(logdir, "model_best.pt"), map_location=args.device))
-    model.to(args.device)
 
     preds = [] 
     model.eval()
@@ -149,6 +152,7 @@ def run(args: DictConfig):
     preds = torch.cat(preds, dim=0).numpy()
     np.save(os.path.join(logdir, "submission"), preds)
     cprint(f"Submission {preds.shape} saved at {logdir}", "cyan")
+
 
 
 if __name__ == "__main__":

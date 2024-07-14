@@ -24,12 +24,6 @@ def run(args: DictConfig):
     # ------------------
     #    Dataloader
     # ------------------    
-    def collate_fn(batch):
-        X_batch = torch.stack([item[0].float() for item in batch])
-        y_batch = torch.tensor([item[1].long() for item in batch]) if batch[0][1] is not None else None
-        subject_idxs_batch = torch.tensor([item[2] for item in batch])
-        return X_batch, y_batch, subject_idxs_batch
-    
     test_set = ThingsMEGDataset("test", data_dir="data", resample_rate=100, filter_params={'order': 5, 'cutoff': 0.3, 'btype': 'low'}, scaling=True, baseline_correction=50)
     
     test_loader = torch.utils.data.DataLoader(
@@ -37,7 +31,7 @@ def run(args: DictConfig):
         batch_size=args.batch_size, 
         shuffle=False, 
         num_workers=args.num_workers,
-        collate_fn=collate_fn
+        collate_fn=collate_fn_test
     )
 
     # ------------------

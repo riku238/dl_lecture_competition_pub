@@ -10,8 +10,8 @@ class BasicConvClassifier(nn.Module):
         seq_len: int,
         in_channels: int,
         hid_dim: int = 128,
-        p_drop: float = 0.5,  # ドロップアウト率
-        weight_decay: float = 1e-4  # L2正則化
+        p_drop: float = 0.5,  
+        weight_decay: float = 1e-4  
     ) -> None:
         super().__init__()
 
@@ -26,10 +26,10 @@ class BasicConvClassifier(nn.Module):
             nn.Linear(hid_dim, num_classes),
         )
 
-        self.weight_decay = weight_decay  # L2正則化の重み
+        self.weight_decay = weight_decay  
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        X = X.float()  # 入力を float32 にキャスト
+        X = X.float()  
         X = self.blocks(X)
         return self.head(X)
 
@@ -62,7 +62,7 @@ class ConvBlock(nn.Module):
         self.dropout = nn.Dropout(p_drop)
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
-        X = X.float()  # 入力を float32 にキャスト
+        X = X.float()  
         if self.in_dim == self.out_dim:
             X = self.conv0(X) + X  # skip connection
         else:
